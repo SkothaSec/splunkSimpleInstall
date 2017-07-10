@@ -17,14 +17,20 @@ Once the script identifies the file, it will ask the user to verify that the cor
 If the file was correct the user will be asked if they want to download the file.
 If the user accepts, the file will be downloaded via curl.
 
+
 ## How to use
 run as root
+
 place shell script in /opt/
+
 run command: chmod +x installUpgradeSplunk.sh
+
 execute the script: ./installUpgradeSplunk.sh
+
 
 ## Next step
 Allow user to install splunk from the script.
+
 
 ## Status
 NOTE: this bash script has only been tested on an ubuntu 16.04 server.
