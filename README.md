@@ -17,6 +17,7 @@ Once the script identifies the file, it will ask the user to verify that the cor
 If the file was correct the user will be asked if they want to download the file.
 If the user accepts, the file will be downloaded via curl.
 
+The script then allows input for verifying that splunks md5 and/or Sha512 matches woth the downloaded file (or the user can skip verification).
 
 ## How to use
 run as root
@@ -36,3 +37,4 @@ Allow user to install splunk from the script.
 NOTE: this bash script has only been tested on an ubuntu 16.04 server.
 
 10 July 2017 - All relavant files should successfuly download and go into the directory splunkUpgradeInstall\downloads.
+11 July 2017 - Added file integrity verification functionality for the downloaded file and fixed some issues with identifying where program directories are.
