@@ -22,9 +22,13 @@ case $mainDir in
                 echo "BLEEP BLOOP BLEEP"
                 echo "Initial tasks Complete"
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
-                mv mainDirCheck.txt initialChecks/;
-                mv subDirCheck.txt initialChecks/;
-		mainPath="splunkInstallUpgrade/"
+                mainPath="./"
+                ogData="./ogData"
+                cData="./cData"
+                downloads="./downloads"
+                initialChecks="./initialChecks"
+                mv mainDirCheck.txt $initialChecks/;
+                mv subDirCheck.txt $initialChecks/;                
                 ;;
         *)
         echo ""
@@ -32,7 +36,12 @@ case $mainDir in
                 echo "BLEEP BLOOP BLEEP"
                 echo "Creating directories in current path for upgrade script"
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
-                mkdir splunkInstallUpgrade;
+                mainPath="splunkInstallUpgrade"
+                ogData="splunkInstallUpgrade/ogData"
+                cData="splunkInstallUpgrade/cData"
+                downloads="splunkInstallUpgrade/downloads"
+                initialChecks="splunkInstallUpgrade/initialChecks"
+                mkdir $mainPath;
                 mkdir $ogData;
                 mkdir $cData;
                 mkdir $downloads;
@@ -45,13 +54,9 @@ case $mainDir in
                 echo "BLEEP BLOOP BLEEP"
                 echo "Initial tasks complete"
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
-		mainPath="."
                 ;;
 esac
-ogData="$mainPath/ogData"
-cData="$mainPath/cData"
-downloads="$mainPath/downloads"
-initialChecks="$mainPath/initialChecks"
+
 
 ######################################################
 ##----------------Download File --------------------##
@@ -63,10 +68,10 @@ echo "This script assumes you are good with reaching out to $(tput setaf 5)splun
 echo "$(tput setaf 3)----------------------------------------------------------------------------------------------$(tput setaf 7)"
 echo ""
 
-read -r -p "Are you sure you are okay with this? By selecting $(tput setaf 3)yes$(tput setaf 7), your device will begin scraping. $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7) " response
+read -r -p "Are you sure you are okay with this? By selecting $(tput setaf 3)yes$(tput setaf 7), your device will begin $(tput staf 3)scraping$(tput setaf 7). $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7): " response
 case "$response" in
         [yY][eE][sS]|[yY])
-		echo ""
+        echo ""
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
                 echo "BLEEP BLOOP BLEEP"
 		            echo "YANKING STUFF FROM SPLUNK.COM"
@@ -145,7 +150,7 @@ case $archChoice in
       awk '{print $2}' $cData/contextDataOS.txt | awk -F"." '{print $NF}' > $cData/fromOSSelect.txt;;
 esac
 
-fromOSSelect=$(cat cData/fromOSSelect.txt)
+fromOSSelect=$(cat $cData/fromOSSelect.txt)
 
 
 PS3="Please Select $dlChoiceMessage"
@@ -165,12 +170,16 @@ awk -v var="$dlChoice" '$2~var' $cData/contextDataOS.txt > $cData/contextDataOSD
 
 linkDownload=$(awk '{print $1}' $cData/contextDataOSDecisionTree.txt)
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
-awk '{print "You have chosen to download splunk", $6, $3, "for", $4}' $cData/contextDataOSDecisionTree.txt;
+awk '{print "## You have chosen to download splunk", $6, $3, "for", $4}' $cData/contextDataOSDecisionTree.txt;
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
 
 awk '{print "The link for your install will be:", $2}' $cData/contextDataOSDecisionTree.txt;
 
-read -r -p "Are you sure you want to download this? [y/N] " response
+################################################
+## Begin download of splunk installation link ##
+################################################
+
+read -r -p "Are you sure you want to $(tput setaf 3)download$(tput setaf 7) this? $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7): " response
 case "$response" in
 	[yY][eE][sS]|[yY])
 		echo ""
@@ -178,7 +187,7 @@ case "$response" in
 		echo "BLEEP BLOOP BLEEP DOWNLOADING"
     		echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 		curl -O $linkDownload;
-    mv splunk* $downloads/
+		mv splunk*.* $downloads/
 		;;
 	*)
 		echo "Ooops, I have not thought about no being an answer..."
