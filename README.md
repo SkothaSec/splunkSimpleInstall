@@ -37,4 +37,5 @@ Allow user to install splunk from the script.
 NOTE: this bash script has only been tested on an ubuntu 16.04 server.
 
 10 July 2017 - All relavant files should successfuly download and go into the directory splunkUpgradeInstall\downloads.
+
 11 July 2017 - Added file integrity verification functionality for the downloaded file and fixed some issues with identifying where program directories are.
