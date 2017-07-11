@@ -28,7 +28,7 @@ case $mainDir in
                 downloads="./downloads"
                 initialChecks="./initialChecks"
                 mv mainDirCheck.txt $initialChecks/;
-                mv subDirCheck.txt $initialChecks/;                
+                mv subDirCheck.txt $initialChecks/;
                 ;;
         *)
         echo ""
@@ -41,14 +41,19 @@ case $mainDir in
                 cData="splunkInstallUpgrade/cData"
                 downloads="splunkInstallUpgrade/downloads"
                 initialChecks="splunkInstallUpgrade/initialChecks"
+		md5Path="splunkInstallUpgrade/downloads/md5"
+		sha512Path="splunkInstallUpgrade/downloads/sha512"
                 mkdir $mainPath;
                 mkdir $ogData;
                 mkdir $cData;
                 mkdir $downloads;
                 mkdir $initialChecks;
+		mkdir $md5Path;
+		mkdir $sha512Path;
                 mv mainDirCheck.txt $initialChecks/
                 mv subDirCheck.txt $initialChecks/
                 mv installUpgradeSplunk.sh $mainPath
+		$sleeping
                 echo ""
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
                 echo "BLEEP BLOOP BLEEP"
@@ -56,6 +61,8 @@ case $mainDir in
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
                 ;;
 esac
+
+
 
 
 ######################################################
@@ -68,7 +75,7 @@ echo "This script assumes you are good with reaching out to $(tput setaf 5)splun
 echo "$(tput setaf 3)----------------------------------------------------------------------------------------------$(tput setaf 7)"
 echo ""
 
-read -r -p "Are you sure you are okay with this? By selecting $(tput setaf 3)yes$(tput setaf 7), your device will begin $(tput staf 3)scraping$(tput setaf 7). $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7): " response
+read -r -p "Are you sure you are okay with this? By selecting $(tput setaf 3)yes$(tput setaf 7), your device will begin scraping. $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7) " response
 case "$response" in
         [yY][eE][sS]|[yY])
         echo ""
@@ -170,16 +177,12 @@ awk -v var="$dlChoice" '$2~var' $cData/contextDataOS.txt > $cData/contextDataOSD
 
 linkDownload=$(awk '{print $1}' $cData/contextDataOSDecisionTree.txt)
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
-awk '{print "## You have chosen to download splunk", $6, $3, "for", $4}' $cData/contextDataOSDecisionTree.txt;
+awk '{print "You have chosen to download splunk", $6, $3, "for", $4}' $cData/contextDataOSDecisionTree.txt;
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
 
 awk '{print "The link for your install will be:", $2}' $cData/contextDataOSDecisionTree.txt;
 
-################################################
-## Begin download of splunk installation link ##
-################################################
-
-read -r -p "Are you sure you want to $(tput setaf 3)download$(tput setaf 7) this? $(tput setaf 6)[$(tput setaf 3)y/N$(tput setaf 6)]$(tput setaf 7): " response
+read -r -p "Are you sure you want to download this? [y/N] " response
 case "$response" in
 	[yY][eE][sS]|[yY])
 		echo ""
@@ -187,7 +190,7 @@ case "$response" in
 		echo "BLEEP BLOOP BLEEP DOWNLOADING"
     		echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 		curl -O $linkDownload;
-		mv splunk*.* $downloads/
+    mv splunk*.* $downloads/
 		;;
 	*)
 		echo "Ooops, I have not thought about no being an answer..."
@@ -199,3 +202,138 @@ esac
 ################################################
 
 ## --> this is the next step.
+##########################
+## File integrity check ##
+##########################
+
+fileDownloaded=$(awk '{print $2}' $cData/contextDataOSDecisionTree.txt)
+md5ToFile=$(awk '{print $7}' $cData/contextDataOSDecisionTree.txt > $cData/contextInstallMd5.txt)
+md5Link=$(cat $cData/contextInstallMd5.txt)
+md5FileParse=$(awk -F"/" '{print $NF}' $cData/contextInstallMd5.txt > $cData/contextFilenameMd5.txt)
+md5File=$(cat $cData/contextFilenameMd5.txt)
+
+sha512ToFile=$(awk '{print $8}' $cData/contextDataOSDecisionTree.txt > $cData/contextInstallSha512.txt)
+sha512Link=$(cat $cData/contextInstallSha512.txt)
+sha512FileParse=$(awk -F"/" '{print $NF}' $cData/contextInstallSha512.txt > $cData/contextFilenameSha512.txt)
+sha512File=$(cat $cData/contextFilenameSha512.txt)
+
+
+echo ""
+echo "-------------------------------------------------"
+echo "-----------------Integrity Check-----------------"
+echo "-------------------------------------------------"
+echo ""
+echo ""
+PS3="How would you like to check the integrity of your install file? "
+select intCheck in md5 sha512 both skip
+do
+        case $intCheck in
+                md5)
+                        echo "You've Selected: $intCheck"
+			echo ""
+			echo "starting integrity check (downloading $intCheck file)"
+			echo ""
+			md5sum $downloads/$fileDownloaded | awk '{print $1}' > $downloads/md5/checkMd5Sum.txt;
+			curl -O $md5Link;
+			mv $md5File $downloads/md5;
+			awk '{print $4}' $downloads/md5/$md5File >> $downloads/md5/checkMd5Sum.txt
+			echo ""
+			echo "Checksum outputs: "
+			cat $downloads/md5/checkMd5Sum.txt
+			intMatchValue=$(uniq -D $downloads/md5/checkMd5Sum.txt | wc -l | awk '{print $1}')
+                                break
+                                ;;
+                sha512)
+                        echo "You've Selected: $intCheck"
+			echo ""
+			echo "starting integrity check."
+			echo ""
+                        sha512sum $downloads/$fileDownloaded | awk '{print $1}' > $downloads/sha512/checkSha512Sum.txt;
+                        curl -O $sha512Link;
+                        mv $sha512File $downloads/sha512;
+                        awk '{print $1}' $downloads/sha512/$sha512File >> $downloads/sha512/checkSha512Sum.txt
+                        echo ""
+                        echo "Checksum outputs: "
+                        cat $downloads/sha512/checkSha512Sum.txt
+                        intMatchValue=$(uniq -D $downloads/sha512/checkSha512Sum.txt | wc -l | awk '{print $1}')
+			intMatchValue=$(($intMatchValue + 1))
+                                break
+                                ;;
+                both)
+			echo ""
+			echo "You've Selected: SHA512 and MD5"
+                        echo ""
+                        echo "starting integrity check (downloading $intCheck files)"
+                        echo ""
+                        md5sum $downloads/$fileDownloaded | awk '{print $1}' > $downloads/md5/checkMd5Sum.txt;
+                        curl -O $md5Link;
+                        mv $md5File $downloads/md5;
+                        awk '{print $4}' $downloads/md5/$md5File >> $downloads/md5/checkMd5Sum.txt
+                        echo ""
+                        echo "md5 outputs: "
+                        cat $downloads/md5/checkMd5Sum.txt
+                        mdMatchValue=$(uniq -D $downloads/md5/checkMd5Sum.txt | wc -l | awk '{print $1}')
+			mdMatchValue=$((mdMatchValue + 2))
+               	###############################
+		## Break between md5 and sha ##
+		###############################
+                        sha512sum $downloads/$fileDownloaded | awk '{print $1}' > $downloads/sha512/checkSha512Sum.txt
+                        curl -O $sha512Link;
+                        mv $sha512File $downloads/sha512;
+                        awk '{print $1}' $downloads/sha512/$sha512File >> $downloads/sha512/checkSha512Sum.txt
+                        echo ""
+                        echo "Checksum outputs: "
+                        cat $downloads/sha512/checkSha512Sum.txt
+                        shaMatchValue=$(uniq -D $downloads/sha512/checkSha512Sum.txt | wc -l | awk '{print $1}')
+			shaMatchValue=$((shaMatchValue + 3))
+			intMatchValue=$(($shaMatchValue + $mdMatchValue))
+                 		break
+                                ;;
+                skip)
+                        echo "Skipping integrity check"
+                                break
+                                ;;
+                *)
+                        echo "Invalid Selection: Please try again(1-4)"
+                                ;;
+        esac
+done
+
+case $intMatchValue in
+	9)
+	echo ""
+	echo "matched SHA512 and MD5, continuing"
+	echo ""
+	;;
+	5)
+	echo ""
+	echo "not sure how this happened, but you matched SHA512 but not MD5"
+	echo ""
+	;;
+	4)
+	echo ""
+	echo "not sure how this happened, but you matched MD5 but not SHA"
+	echo ""
+	;;
+	3)
+	echo ""
+	echo "SHA512 Matched Continuing"
+	echo ""
+	;;
+	2)
+	echo ""
+	echo "MD5 Matched Continuing"
+	echo ""
+	;;
+	1)
+	echo ""
+	echo "THERE ARE 512 REASONS YOU SHOULD NOT INSTALL THIS FILE"
+	echo ""
+	;;
+	0)
+	echo ""
+	echo "BURN THE FILE THE MD5 CHECK DIDN'T MATCH"
+	echo ""
+	;;
+esac
+
