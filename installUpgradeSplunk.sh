@@ -10,13 +10,6 @@ subDirCheck=$(ls -R | awk '
 /:$/&&!f{sub(/:$/,"");s=$0;f=1;next}
 NF&&f{ print s"/"$8 }' > subDirCheck.txt)
 
-mainPath="splunkInstallUpgrade"
-ogData="splunkInstallUpgrade/ogData"
-cData="splunkInstallUpgrade/cData"
-downloads="splunkInstallUpgrade/downloads"
-initialChecks="splunkInstallUpgrade/initialChecks"
-
-
 $mainDirCheck;
 $subDirCheck;
 mainDir=$(cat mainDirCheck.txt)
@@ -31,6 +24,7 @@ case $mainDir in
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
                 mv mainDirCheck.txt initialChecks/;
                 mv subDirCheck.txt initialChecks/;
+		mainPath="splunkInstallUpgrade/"
                 ;;
         *)
         echo ""
@@ -51,8 +45,14 @@ case $mainDir in
                 echo "BLEEP BLOOP BLEEP"
                 echo "Initial tasks complete"
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
+		mainPath="."
                 ;;
 esac
+ogData="$mainPath/ogData"
+cData="$mainPath/cData"
+downloads="$mainPath/downloads"
+initialChecks="$mainPath/initialChecks"
+
 ######################################################
 ##----------------Download File --------------------##
 ######################################################
@@ -71,7 +71,7 @@ case "$response" in
                 echo "BLEEP BLOOP BLEEP"
 		            echo "YANKING STUFF FROM SPLUNK.COM"
                 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
-		curl "https://www.splunk.com/en_us/download/splunk-enterprise.html" > ogData/splunkDLSource.txt
+		curl "https://www.splunk.com/en_us/download/splunk-enterprise.html" > $ogData/splunkDLSource.txt
                 ;;
         *)
                 echo "Ooops, I have not thought about no being an answer... exiting script"
@@ -85,8 +85,8 @@ echo "Chopping the html up"
 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 echo ""
 
-awk '/data\-filename\=/' ogData/splunkDLSource.txt > cData/contextData.txt ;
-awk -F'"' '/\".*?"/{print $6, $8, $10, $12, $14, $16, $18, $20}' cData/contextData.txt > cData/fieldsBase.txt;
+awk '/data\-filename\=/' $ogData/splunkDLSource.txt > $cData/contextData.txt ;
+awk -F'"' '/\".*?"/{print $6, $8, $10, $12, $14, $16, $18, $20}' $cData/contextData.txt > $cData/fieldsBase.txt;
 
 ###########################################################################################
 ##                                          Awk Fields                                   ##
@@ -135,14 +135,14 @@ echo "BLEEP BLOOP BLEEP MATCHING"
 echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 echo ""
 
-awk -v var="$osChoice" '$0~var' cData/fieldsBase.txt > cData/contextDataOS.txt;
+awk -v var="$osChoice" '$0~var' $cData/fieldsBase.txt > $cData/contextDataOS.txt;
 case $archChoice in
     1)
       dlChoiceMessage="architecture: "
-      awk '{print $3}' cData/contextDataOS.txt | sed 's/.._//g' > cData/fromOSSelect.txt;;
+      awk '{print $3}' $cData/contextDataOS.txt | sed 's/.._//g' > $cData/fromOSSelect.txt;;
     0)
       dlChoiceMessage="file extension: "
-      awk '{print $2}' cData/contextDataOS.txt | awk -F"." '{print $NF}' > cData/fromOSSelect.txt;;
+      awk '{print $2}' $cData/contextDataOS.txt | awk -F"." '{print $NF}' > $cData/fromOSSelect.txt;;
 esac
 
 fromOSSelect=$(cat cData/fromOSSelect.txt)
@@ -156,19 +156,19 @@ do
     break
 done
 
-awk -v var="$dlChoice" '$3=var' cData/contextDataOS.txt > cData/contextDataOSDecisionTree.txt;
-awk -v var="$dlChoice" '$2~var' cData/contextDataOS.txt > cData/contextDataOSDecisionTree.txt;
+awk -v var="$dlChoice" '$3=var' $cData/contextDataOS.txt > $cData/contextDataOSDecisionTree.txt;
+awk -v var="$dlChoice" '$2~var' $cData/contextDataOS.txt > $cData/contextDataOSDecisionTree.txt;
 #cat fromOSSelect.txt
 #cat contextDataOSDecisionTree.txt
 #cat contextDataOS.txt
 
 
-linkDownload=$(awk '{print $1}' cData/contextDataOSDecisionTree.txt)
+linkDownload=$(awk '{print $1}' $cData/contextDataOSDecisionTree.txt)
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
-awk '{print "You have chosen to download splunk", $6, $3, "for", $4}' cData/contextDataOSDecisionTree.txt;
+awk '{print "You have chosen to download splunk", $6, $3, "for", $4}' $cData/contextDataOSDecisionTree.txt;
 echo "$(tput setaf 3)##---------------------------------------------------------------------##$(tput setaf 7)"
 
-awk '{print "The link for your install will be:", $2}' cData/contextDataOSDecisionTree.txt;
+awk '{print "The link for your install will be:", $2}' $cData/contextDataOSDecisionTree.txt;
 
 read -r -p "Are you sure you want to download this? [y/N] " response
 case "$response" in
@@ -176,9 +176,9 @@ case "$response" in
 		echo ""
 		echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 		echo "BLEEP BLOOP BLEEP DOWNLOADING"
-    echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
+    		echo "$(tput setaf 3)-----------------------------$(tput setaf 7)"
 		curl -O $linkDownload;
-    mv splunk* downloads/
+    mv splunk* $downloads/
 		;;
 	*)
 		echo "Ooops, I have not thought about no being an answer..."
